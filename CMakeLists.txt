@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.10)
 set(DEFAULT_BUILD_TYPE "Release")
 set(CMAKE_CXX_STANDARD 14)
 
-project(libpicornt
+project(picornt
     LANGUAGES CXX
 )
 
@@ -25,3 +25,9 @@ INSTALL(
 	rnt/cascades/facefinder DESTINATION share/${PROJECT_NAME}
 )
 
+
+option(DEMO "Build example" OFF)
+
+if (DEMO)
+	add_subdirectory(rnt/samples/native)
+endif()
