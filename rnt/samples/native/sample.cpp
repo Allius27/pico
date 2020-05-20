@@ -55,7 +55,7 @@ float getticks()
 	
 */
 
-void* cascade = 0;
+picornt picorntCore;
 
 int minsize;
 int maxsize;
@@ -118,7 +118,7 @@ void process_image(Mat & frame)
         ncols = pyr[0]->cols;
         ldim = pyr[0]->step;
 
-		ndetections = find_objects(rcsq, MAXNDETECTIONS, cascade, angle, pixels, nrows, ncols, ldim, scalefactor, stridefactor, MAX(16, minsize), MIN(128, maxsize));
+		ndetections = picorntCore.find_objects(rcsq, MAXNDETECTIONS, angle, pixels, nrows, ncols, ldim, scalefactor, stridefactor, MAX(16, minsize), MIN(128, maxsize));
 
 		for(i=1; i<5; ++i)
 		{
@@ -129,7 +129,7 @@ void process_image(Mat & frame)
             ncols = pyr[i]->cols;
             ldim = pyr[i]->step;
 
-            nd = find_objects(&rcsq[4*ndetections], MAXNDETECTIONS-ndetections, cascade, angle, pixels, nrows, ncols, ldim, scalefactor, stridefactor, MAX(64, minsize>>i), MIN(128, maxsize>>i));
+            nd = picorntCore.find_objects(&rcsq[4*ndetections], MAXNDETECTIONS-ndetections, angle, pixels, nrows, ncols, ldim, scalefactor, stridefactor, MAX(64, minsize>>i), MIN(128, maxsize>>i));
 
 			for(j=ndetections; j<ndetections+nd; ++j)
 			{
@@ -150,11 +150,11 @@ void process_image(Mat & frame)
         ldim = gray->step;
 
 		//
-		ndetections = find_objects(rcsq, MAXNDETECTIONS, cascade, angle, pixels, nrows, ncols, ldim, scalefactor, stridefactor, minsize, MIN(nrows, ncols));
+		ndetections = picorntCore.find_objects(rcsq, MAXNDETECTIONS, angle, pixels, nrows, ncols, ldim, scalefactor, stridefactor, minsize, MIN(nrows, ncols));
 	}
 
 	if(!noclustering)
-		ndetections = cluster_detections(rcsq, ndetections);
+		ndetections = picorntCore.cluster_detections(rcsq, ndetections);
 
 	t = getticks() - t;
 
@@ -266,31 +266,8 @@ int main(int argc, char* argv[])
 	}
     else
     {
-        int size;
-        FILE* file;
-
-        //
-        file = fopen(argv[1], "rb");
-
-        if(!file)
-        {
-            printf("# cannot read cascade from '%s'\n", argv[1]);
-            return 1;
-        }
-
-        //
-        fseek(file, 0L, SEEK_END);
-        size = ftell(file);
-        fseek(file, 0L, SEEK_SET);
-
-        //
-        cascade = malloc(size);
-
-        if(!cascade || size!=fread(cascade, 1, size, file))
-            return 1;
-
-        //
-        fclose(file);
+    	if ( !picorntCore.loadModel(std::string{argv[1]}) )
+    		return 1;
     }
 
 	// set default parameters
@@ -440,11 +417,6 @@ int main(int argc, char* argv[])
 			noclustering = 1;
 			++arg;
 		}
-		else if(0==strcmp("-v", argv[arg]) || 0==strcmp("--verbose", argv[arg]))
-		{
-			verbose = 1;
-			++arg;
-		}
 		else
 		{
 			printf("# invalid command line argument '%s'\n", argv[arg]);
@@ -452,24 +424,24 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	if(verbose)
-	{
-		//
-		printf("# Copyright (c) 2013, Nenad Markus\n");
-		printf("# All rights reserved.\n\n");
+	// if(verbose)
+	// {
+	// 	//
+	// 	printf("# Copyright (c) 2013, Nenad Markus\n");
+	// 	printf("# All rights reserved.\n\n");
 
-		printf("# cascade parameters:\n");
-		printf("#	version = %d\n", ((int*)cascade)[0]);
-		printf("#	tdepth = %d\n", ((int*)cascade)[2]);
-		printf("#	ntrees = %d\n", ((int*)cascade)[3]);
-		printf("# detection parameters:\n");
-		printf("#	minsize = %d\n", minsize);
-		printf("#	maxsize = %d\n", maxsize);
-		printf("#	scalefactor = %f\n", scalefactor);
-		printf("#	stridefactor = %f\n", stridefactor);
-		printf("#	qthreshold = %f\n", qthreshold);
-		printf("#	usepyr = %d\n", usepyr);
-	}
+	// 	printf("# cascade parameters:\n");
+	// 	printf("#	version = %d\n", ((int*)cascade)[0]);
+	// 	printf("#	tdepth = %d\n", ((int*)cascade)[2]);
+	// 	printf("#	ntrees = %d\n", ((int*)cascade)[3]);
+	// 	printf("# detection parameters:\n");
+	// 	printf("#	minsize = %d\n", minsize);
+	// 	printf("#	maxsize = %d\n", maxsize);
+	// 	printf("#	scalefactor = %f\n", scalefactor);
+	// 	printf("#	stridefactor = %f\n", stridefactor);
+	// 	printf("#	qthreshold = %f\n", qthreshold);
+	// 	printf("#	usepyr = %d\n", usepyr);
+	// }
 
 	//
     if(0 == input[0])

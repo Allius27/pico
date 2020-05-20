@@ -6,13 +6,49 @@
 #define MAX(a, b) ((a)>(b)?(a):(b))
 #define MIN(a, b) ((a)<(b)?(a):(b))
 
-#include <stdint.h>
+#include "picornt.h"
+
+bool picornt::loadModel(const std::string & model) {
+	int size;
+    FILE* file;
+
+    //
+    file = fopen(model.c_str(), "rb");
+
+    if(!file)
+    {
+    	printf("# cannot read cascade from '%s'\n", model.c_str());
+        return false;
+	}
+
+    //
+    fseek(file, 0L, SEEK_END);
+    size = ftell(file);
+    fseek(file, 0L, SEEK_SET);
+
+    //
+    cascade = malloc(size);
+
+    if(!cascade || size!=fread(cascade, 1, size, file))
+    	return false;
+
+	//
+    fclose(file);
+
+    return true;
+}
+
+bool picornt::getModelInfo(modelInfo & info) {
+	info.version = ((int*)cascade)[0];
+	info.tdepth  = ((int*)cascade)[2];
+	info.ntrees  = ((int*)cascade)[3];
+}
 
 /*
 	
 */
 
-int run_cascade(void* cascade, float* o, int r, int c, int s, void* vppixels, int nrows, int ncols, int ldim)
+int picornt::run_cascade(void* cascade, float* o, int r, int c, int s, void* vppixels, int nrows, int ncols, int ldim)
 {
 	//
 	int i, j, idx;
@@ -74,7 +110,7 @@ int run_cascade(void* cascade, float* o, int r, int c, int s, void* vppixels, in
 	return +1;
 }
 
-int run_rotated_cascade(void* cascade, float* o, int r, int c, int s, float a, void* vppixels, int nrows, int ncols, int ldim)
+int picornt::run_rotated_cascade(void* cascade, float* o, int r, int c, int s, float a, void* vppixels, int nrows, int ncols, int ldim)
 {
 	//
 	int i, j, idx;
@@ -154,10 +190,10 @@ int run_rotated_cascade(void* cascade, float* o, int r, int c, int s, float a, v
 	return +1;
 }
 
-int find_objects
+int picornt::find_objects
 (
 	float rcsq[], int maxndetections,
-	void* cascade, float angle, // * `angle` is a number between 0 and 1 that determines the counterclockwise in-plane rotation of the cascade: 0.0f corresponds to 0 radians and 1.0f corresponds to 2*pi radians
+	float angle, // * `angle` is a number between 0 and 1 that determines the counterclockwise in-plane rotation of the cascade: 0.0f corresponds to 0 radians and 1.0f corresponds to 2*pi radians
 	void* pixels, int nrows, int ncols, int ldim,
 	float scalefactor, float stridefactor, float minsize, float maxsize
 )
@@ -215,7 +251,7 @@ int find_objects
 	
 */
 
-float get_overlap(float r1, float c1, float s1, float r2, float c2, float s2)
+float picornt::get_overlap(float r1, float c1, float s1, float r2, float c2, float s2)
 {
 	float overr, overc;
 
@@ -227,7 +263,7 @@ float get_overlap(float r1, float c1, float s1, float r2, float c2, float s2)
 	return overr*overc/(s1*s1+s2*s2-overr*overc);
 }
 
-void ccdfs(int a[], int i, float rcsq[], int n)
+void picornt::ccdfs(int a[], int i, float rcsq[], int n)
 {
 	int j;
 
@@ -243,7 +279,7 @@ void ccdfs(int a[], int i, float rcsq[], int n)
 		}
 }
 
-int find_connected_components(int a[], float rcsq[], int n)
+int picornt::find_connected_components(int a[], float rcsq[], int n)
 {
 	int i, cc;
 
@@ -275,7 +311,7 @@ int find_connected_components(int a[], float rcsq[], int n)
 	return cc - 1; // number of connected components
 }
 
-int cluster_detections(float rcsq[], int n)
+int picornt::cluster_detections(float rcsq[], int n)
 {
 	int idx, ncc, cc;
 	int a[4096];
@@ -327,7 +363,7 @@ int cluster_detections(float rcsq[], int n)
 
 */
 
-int update_memory
+int picornt::update_memory
 (
 	int* slot,
 	float memory[], int counts[], int nmemslots, int maxslotsize,
