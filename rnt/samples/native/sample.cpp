@@ -183,7 +183,7 @@ void process_webcam_frames()
     cv::VideoCapture * capture;
     cv::Mat frame;
 
-    capture = new cv::VideoCapture(2);
+    capture = new cv::VideoCapture(0);
 
     if( !capture )
 	{
