@@ -85,6 +85,26 @@ def export_img_and_boxes(img, bboxes):
 		write_sample_to_stdout(resized_img, resized_bboxes)
 		#visualize_bboxes(resized_img, resized_bboxes)
 
+
+def saveMouth(img, mouthArea, filename):
+
+	height = mouthArea[0][3] - mouthArea[0][1]
+	width = mouthArea[0][2] - mouthArea[0][0]
+
+	if height < 30 or width < 50:
+		return
+
+	roi = img[mouthArea[0][1]:mouthArea[0][3],mouthArea[0][0]:mouthArea[0][2]]
+
+	if not os.path.isdir("mouth"):
+		os.mkdir("mouth")
+
+	cv2.imwrite("mouth/" + filename.split("/")[1], roi )
+
+	# show picture
+	# cv2.imshow("asd", roi)
+	# cv2.waitKey(0)
+
 #
 #
 #
@@ -115,6 +135,8 @@ for i in range(0, len(imgpaths)):
 	img = cv2.imread(imgpaths[i])
 	#
 	bboxes = []
+	mouthArea = []
+
 	for face in faces[i]:
 		#
 		eyedist = ( (face[0]-face[2])**2 + (face[1]-face[3])**2 )**0.5
@@ -123,5 +145,16 @@ for i in range(0, len(imgpaths)):
 		s = 2.0*1.5*eyedist
 		#
 		bboxes.append((r, c, s))
+
+		dY = (int(face[7]) - int(face[5]))
+
+		mouthAreaX = int(face[0] - eyedist * 0.25)
+		mouthAreaY = int(face[5] + dY / 2)
+		mouthAreaW = int(face[2] + eyedist * 0.25)
+		mouthAreaH = int(face[7] + dY / 2)
+
+		mouthArea.append((mouthAreaX, mouthAreaY, mouthAreaW, mouthAreaH))
+
 	#
 	export_img_and_boxes(img, bboxes)
+	saveMouth(img, mouthArea, imgpaths[i])
