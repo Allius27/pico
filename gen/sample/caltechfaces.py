@@ -16,6 +16,28 @@ args = parser.parse_args()
 #
 #
 
+def getSquare(area):
+	height = area[3] - area[1]
+	width = area[2] - area[0]
+
+	maxSide = max(height, width)
+
+	centerX = (area[0] + area[2])/2
+	centerY = (area[1] + area[3])/2
+
+	newArea = (int(centerX - maxSide/2),
+			   int(centerY - maxSide/2),
+			   int(centerX + maxSide/2),
+			   int(centerY + maxSide/2))
+
+	return newArea
+
+def checkMinSize(area, minSize):
+	if ((area[2] - area[0]) < minSize) or \
+		((area[3] - area[1]) < minSize):
+		return False
+	return True
+
 def write_rid_to_stdout(im):
 	#
 	# raw intensity data
@@ -87,14 +109,12 @@ def export_img_and_boxes(img, bboxes):
 
 
 def saveMouth(img, mouthArea, filename):
+	square = getSquare(mouthArea)
 
-	height = mouthArea[0][3] - mouthArea[0][1]
-	width = mouthArea[0][2] - mouthArea[0][0]
-
-	if height < 30 or width < 50:
+	if not checkMinSize(square, 25):
 		return
 
-	roi = img[mouthArea[0][1]:mouthArea[0][3],mouthArea[0][0]:mouthArea[0][2]]
+	roi = img[square[1]:square[3],square[0]:square[2]]
 
 	if not os.path.isdir("mouth"):
 		os.mkdir("mouth")
@@ -135,7 +155,6 @@ for i in range(0, len(imgpaths)):
 	img = cv2.imread(imgpaths[i])
 	#
 	bboxes = []
-	mouthArea = []
 
 	for face in faces[i]:
 		#
@@ -148,12 +167,12 @@ for i in range(0, len(imgpaths)):
 
 		dY = (int(face[7]) - int(face[5]))
 
-		mouthAreaX = int(face[0] - eyedist * 0.25)
+		mouthAreaX = int(face[0] - eyedist * 0.1)
 		mouthAreaY = int(face[5] + dY / 2)
-		mouthAreaW = int(face[2] + eyedist * 0.25)
+		mouthAreaW = int(face[2] + eyedist * 0.1)
 		mouthAreaH = int(face[7] + dY / 2)
 
-		mouthArea.append((mouthAreaX, mouthAreaY, mouthAreaW, mouthAreaH))
+		mouthArea = (mouthAreaX, mouthAreaY, mouthAreaW, mouthAreaH)
 
 	#
 	export_img_and_boxes(img, bboxes)
