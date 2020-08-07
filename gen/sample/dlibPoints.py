@@ -18,6 +18,9 @@ args = parser.parse_args()
 
 dlib_predictor = "shape_predictor_68_face_landmarks.dat"
 
+# visualize = True
+visualize = False
+
 if not os.path.isfile(dlib_predictor):
 	if not os.path.isfile(dlib_predictor + ".bz2"):
 		subprocess.call(['wget', 'http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2'])
@@ -55,26 +58,46 @@ def getRect(vecX, vecY):
 
 	return (tx,ty,bx,by)
 
-def saveMouthRect(shape, fileName):
+
+
+def getStringFromArray(array):
+	string = " "
+	for i in range(0, len(array)):
+		string += str(array[i]) + " "
+	return string
+
+def getDlibRect(img, shape, min:int, max:int):
 	vecX = []
 	vecY = []
-	for b in range(48,68):
+	for b in range(min, max):
 		vecX.append(shape.part(b).x)
 		vecY.append(shape.part(b).y)
 
 	square = getSquare(getRect(vecX, vecY))
+	img = drawRect(img, square)
 
-	writeString = fileName + " " \
-				  		   + str(square[0]) + " " \
-						   + str(square[1]) + " "\
-						   + str(square[2]) + " "\
-						   + str(square[3]) + "\n"
+	return img, square
 
-	mouthFile.write(writeString)
+def saveRect(img, rect, filename, directoryForSave, mirror=False):
+	roi = img[rect[1]:rect[3], rect[0]:rect[2]]
+
+	if mirror:
+		roi = cv2.flip(roi, 1)
+
+	if not os.path.isdir(directoryForSave):
+		os.mkdir(directoryForSave)
+
+	cv2.imwrite(directoryForSave + "/" + filename, roi)
+
+def drawRect(img, rect):
+	# visualize
+	if visualize:
+		cv2.rectangle(img, (rect[0], rect[1]), (rect[2],rect[3]), (255,255,0))
+	return img
 
 onlyfiles = [f for f in listdir(args.src) if isfile(join(args.src, f)) and f.endswith(".jpg")]
 
-mouthFile = open(args.src +"/mouthDlibMeta.txt", 'w')
+writeFile = open(args.src +"/dlibMeta.txt", 'w')
 
 for i in range(0, len(onlyfiles)):
 	print("Process ", str(i+1) + "/" + str(len(onlyfiles)))
@@ -85,7 +108,32 @@ for i in range(0, len(onlyfiles)):
 	for k, d in enumerate(dets):
 		shape = predictor(img, d)
 
-		saveMouthRect(shape, file)
+		imgViz = img
 
+		imgViz, faceRect  = getDlibRect(imgViz, shape, 0, 68)
+		imgViz, mouthRect = getDlibRect(imgViz, shape, 48, 68)
+		imgViz, leftEye   = getDlibRect(imgViz, shape, 42, 48)
+		imgViz, rightEye  = getDlibRect(imgViz, shape, 36, 42)
 
-mouthFile.close()
+		writeString = file \
+					  + getStringFromArray(faceRect) \
+					  + getStringFromArray(mouthRect) \
+					  + getStringFromArray(leftEye) \
+					  + getStringFromArray(rightEye) +"\n"
+
+		# writeFile.write(writeString)
+
+		filenameBase = file.split(".")[0] + "_" + str(k)
+		filenameEnd  = file.split(".")[1]
+		filename     = filenameBase + "."    + filenameEnd
+		filenameRE   = filenameBase + "_RE." + filenameEnd
+		filenameLE   = filenameBase + "_LE." + filenameEnd
+
+		saveRect(img, faceRect, filename, "face")
+		saveRect(img, mouthRect, filename, "mouth")
+		saveRect(img, leftEye, filenameLE, "eyes")
+		saveRect(img, rightEye, filenameRE, "eyes")
+
+		if visualize:
+			cv2.imshow("image", imgViz)
+			cv2.waitKey(0)
