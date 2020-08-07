@@ -8,6 +8,7 @@ import struct
 import dlib
 from os import listdir
 from os.path import isfile, join
+import subprocess
 
 #
 import argparse
@@ -15,7 +16,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('src', help='CaltechFaces source folder')
 args = parser.parse_args()
 
-dlib_predictor = "../../../../../../faceRecognitionOveview_build/install/shape_predictor_68_face_landmarks.dat"
+dlib_predictor = "shape_predictor_68_face_landmarks.dat"
+
+if not os.path.isfile(dlib_predictor):
+	if not os.path.isfile(dlib_predictor + ".bz2"):
+		subprocess.call(['wget', 'http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2'])
+	subprocess.call(['bzip2', "-d", 'shape_predictor_68_face_landmarks.dat.bz2'])
 
 if not os.path.isfile(dlib_predictor):
 	print ("dlib predictor does not exist")
