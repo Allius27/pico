@@ -5,11 +5,13 @@ import random
 import numpy
 import cv2
 import struct
+from os import listdir
+from os.path import isfile, join
 
 #
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('src', help='CaltechFaces source folder')
+parser.add_argument('src', help='Source folder with faces')
 args = parser.parse_args()
 
 #
@@ -105,7 +107,7 @@ def export_img_and_boxes(img, bboxes):
 				resized_bboxes.append(resized_box)
 		#
 		write_sample_to_stdout(resized_img, resized_bboxes)
-		#visualize_bboxes(resized_img, resized_bboxes)
+		# visualize_bboxes(resized_img, resized_bboxes)
 
 
 def saveMouth(img, mouthArea, filename):
@@ -128,52 +130,16 @@ def saveMouth(img, mouthArea, filename):
 #
 #
 #
-
-annots = open(os.path.join(args.src, 'WebFaces_GroundThruth.txt'), 'r')
-imgpaths = []
-faces = []
-dict = {}
-
-for line in annots.readlines():
-	#
-	if line.strip() != '':
-		imgname = line.split()[0]
-		if imgname in dict:
-			i = dict[imgname]
-			faces[i].append([float(x) for x in line.split()[1:]])
-		else:
-			dict[imgname] = len(imgpaths)
-			imgpaths.append(os.path.join(args.src, imgname))
-			faces.append([[float(x) for x in line.split()[1:]]])
-
+onlyfiles = [f for f in listdir(args.src) if isfile(join(args.src, f))]
 #
 #
 #
 
-for i in range(0, len(imgpaths)):
+
+for file in onlyfiles:
 	#
-	img = cv2.imread(imgpaths[i])
+	img = cv2.imread(args.src + "/" + file)
 	#
-	bboxes = []
-
-	for face in faces[i]:
-		#
-		eyedist = ( (face[0]-face[2])**2 + (face[1]-face[3])**2 )**0.5
-		r = (face[1]+face[3])/2.0 + 0.25*eyedist
-		c = (face[0]+face[2])/2.0
-		s = 2.0*1.5*eyedist
-		#
-		bboxes.append((r, c, s))
-
-		dY = (int(face[7]) - int(face[5]))
-
-		mouthAreaX = int(face[0] - eyedist * 0.1)
-		mouthAreaY = int(face[5] + dY / 2)
-		mouthAreaW = int(face[2] + eyedist * 0.1)
-		mouthAreaH = int(face[7] + dY / 2)
-
-		mouthArea = (mouthAreaX, mouthAreaY, mouthAreaW, mouthAreaH)
-
+	bboxes = [(int(img.shape[0]/2), int(img.shape[1]/2), int(img.shape[0]))]
 	#
 	export_img_and_boxes(img, bboxes)
-	saveMouth(img, mouthArea, imgpaths[i])
