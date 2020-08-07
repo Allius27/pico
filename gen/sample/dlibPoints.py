@@ -42,10 +42,11 @@ def getSquare(rect):
 	centerX = (rect[0] + rect[2]) / 2
 	centerY = (rect[1] + rect[3]) / 2
 
-	newRect = (int(centerX - maxSide / 2),
+	newRect = [int(centerX - maxSide / 2),
 			   int(centerY - maxSide / 2),
 			   int(centerX + maxSide / 2),
-			   int(centerY + maxSide / 2))
+			   int(centerY + maxSide / 2)]
+
 
 	return newRect
 
@@ -58,22 +59,29 @@ def getRect(vecX, vecY):
 
 	return (tx,ty,bx,by)
 
-
-
 def getStringFromArray(array):
 	string = " "
 	for i in range(0, len(array)):
 		string += str(array[i]) + " "
 	return string
 
-def getDlibRect(img, shape, min:int, max:int):
+def getDlibRect(img, dlibShape, dlibMin:int, dlibMax:int):
 	vecX = []
 	vecY = []
-	for b in range(min, max):
-		vecX.append(shape.part(b).x)
-		vecY.append(shape.part(b).y)
+	for b in range(dlibMin, dlibMax):
+		vecX.append(dlibShape.part(b).x)
+		vecY.append(dlibShape.part(b).y)
 
 	square = getSquare(getRect(vecX, vecY))
+
+	if square[0] < 0:
+		square[0] = 0
+	if square[1] < 0:
+		square[1] = 0
+
+	square[2] = min(img.shape[1], square[2])
+	square[3] = min(img.shape[0], square[3])
+
 	img = drawRect(img, square)
 
 	return img, square
@@ -97,7 +105,7 @@ def drawRect(img, rect):
 
 onlyfiles = [f for f in listdir(args.src) if isfile(join(args.src, f)) and f.endswith(".jpg")]
 
-writeFile = open(args.src +"/dlibMeta.txt", 'w')
+# writeFile = open(args.src +"/dlibMeta.txt", 'w')
 
 for i in range(0, len(onlyfiles)):
 	print("Process ", str(i+1) + "/" + str(len(onlyfiles)))
@@ -129,11 +137,12 @@ for i in range(0, len(onlyfiles)):
 		filenameRE   = filenameBase + "_RE." + filenameEnd
 		filenameLE   = filenameBase + "_LE." + filenameEnd
 
+		if visualize:
+			cv2.imshow("image", imgViz)
+			cv2.waitKey(0)
+
 		saveRect(img, faceRect, filename, "face")
 		saveRect(img, mouthRect, filename, "mouth")
 		saveRect(img, leftEye, filenameLE, "eyes")
 		saveRect(img, rightEye, filenameRE, "eyes")
 
-		if visualize:
-			cv2.imshow("image", imgViz)
-			cv2.waitKey(0)
