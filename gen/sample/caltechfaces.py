@@ -131,6 +131,7 @@ def saveMouth(img, mouthArea, filename):
 #
 #
 onlyfiles = [f for f in listdir(args.src) if isfile(join(args.src, f))]
+onlyfiles = [f for f in listdir(args.src) if f.endswith(".jpg") and isfile(join(args.src, f))]
 #
 #
 #
