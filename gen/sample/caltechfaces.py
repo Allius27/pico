@@ -7,6 +7,7 @@ import cv2
 import struct
 from os import listdir
 from os.path import isfile, join
+from pathlib import Path
 
 #
 import argparse
@@ -130,8 +131,7 @@ def saveMouth(img, mouthArea, filename):
 #
 #
 #
-onlyfiles = [f for f in listdir(args.src) if isfile(join(args.src, f))]
-onlyfiles = [f for f in listdir(args.src) if f.endswith(".jpg") and isfile(join(args.src, f))]
+onlyfiles = list(Path(args.src).rglob("*.[j][p][g]"))
 #
 #
 #
@@ -139,7 +139,7 @@ onlyfiles = [f for f in listdir(args.src) if f.endswith(".jpg") and isfile(join(
 
 for file in onlyfiles:
 	#
-	img = cv2.imread(args.src + "/" + file)
+	img = cv2.imread(str(file))
 	#
 	bboxes = [(int(img.shape[0]/2), int(img.shape[1]/2), int(img.shape[0]))]
 	#
