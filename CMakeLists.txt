@@ -22,6 +22,7 @@ INSTALL(
 
 INSTALL(
 	FILES
+	rnt/cascades/facefinder
 	rnt/cascades/_facefinder  
 	rnt/cascades/_mouthfinder 
 	rnt/cascades/_eyesfinder  DESTINATION share/${PROJECT_NAME}
