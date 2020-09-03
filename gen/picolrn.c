@@ -100,7 +100,7 @@ uint32_t mwcrand()
 	
 */
 
-#define MAX_N 4000000
+#define MAX_N 20000000
 
 int nimages = 0;
 uint8_t* ppixels[MAX_N];
@@ -640,7 +640,7 @@ float learn_new_stage(float mintpr, float maxfpr, int maxntrees, float tvals[], 
 		}
 		while(tpr<mintpr);
 
-		printf("	** tree %d (%d [s]) ... stage tpr=%f, stage fpr=%f\n", ntrees, (int)(getticks()-t), tpr, fpr);
+		printf("	** tree %d/%d (%d [s]) ... stage tpr=%f, stage fpr=%f\n", ntrees, maxntrees, (int)(getticks()-t), tpr, fpr);
 		fflush(stdout);
 	}
 
@@ -1079,7 +1079,7 @@ int main(int argc, char* argv[])
 		}
 
 		int8_t bb[] = {-127, +127, -127, +127};
-		learn_a_cascade(argv[2], bb, 6, 0.98f, 0.4f, 16);
+		learn_a_cascade(argv[2], bb, 10, 0.98f, 0.5f, 30);
 
 		file = fopen(argv[2], "wb");
 		if(!file || !save_cascade_to_file(file))

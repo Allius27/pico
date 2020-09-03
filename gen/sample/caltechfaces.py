@@ -8,11 +8,16 @@ import struct
 from os import listdir
 from os.path import isfile, join
 from pathlib import Path
+import time
+
+
 
 #
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('src', help='Source folder with faces')
+parser.add_argument('dstFile', help='Destination database')
+parser.add_argument('multiplier', help='Base increase factor', type=int, default=8)
 args = parser.parse_args()
 
 #
@@ -55,24 +60,28 @@ def write_rid_to_stdout(im):
 	pixels = struct.pack('%sB' % h*w, *im.reshape(-1))
 
 	#
-	sys.stdout.buffer.write(hw)
-	sys.stdout.buffer.write(pixels)
+	writeFile.write(hw)
+	writeFile.write(pixels)
+	# sys.stdout.buffer.write(hw)
+	# sys.stdout.buffer.write(pixels)
 
 #
 #
 #
 
-def write_sample_to_stdout(img, bboxes):
+def write_sample_to_file(img, bboxes):
 	#
 	if len(img.shape)==3:
 		img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 	#
 	write_rid_to_stdout(img)
 
-	sys.stdout.buffer.write( struct.pack('i', len(bboxes)) )
+	writeFile.write( struct.pack('i', len(bboxes)) )
+	# sys.stdout.buffer.write( struct.pack('i', len(bboxes)) )
 
 	for box in bboxes:
-		sys.stdout.buffer.write( struct.pack('iii', box[0], box[1], box[2]) )
+		writeFile.write( struct.pack('iii', box[0], box[1], box[2]) )
+		# sys.stdout.buffer.write( struct.pack('iii', box[0], box[1], box[2]) )
 
 #
 #
@@ -86,7 +95,7 @@ def visualize_bboxes(img, bboxes):
 
 def export_img_and_boxes(img, bboxes):
 	#
-	for i in range(0, 8):
+	for i in range(0, args.multiplier):
 		#
 		scalefactor = 0.7 + 0.6*numpy.random.random()
 		#
@@ -107,7 +116,7 @@ def export_img_and_boxes(img, bboxes):
 			if resized_box[2] >= 24:
 				resized_bboxes.append(resized_box)
 		#
-		write_sample_to_stdout(resized_img, resized_bboxes)
+		write_sample_to_file(resized_img, resized_bboxes)
 		# visualize_bboxes(resized_img, resized_bboxes)
 
 
@@ -136,11 +145,17 @@ onlyfiles = list(Path(args.src).rglob("*.[j][p][g]"))
 #
 #
 
+writeFile = open(args.dstFile, 'wb')
 
-for file in onlyfiles:
+
+for index in range(0, len(onlyfiles)):
+	
 	#
-	img = cv2.imread(str(file))
+	img = cv2.imread(str(onlyfiles[index]))
 	#
 	bboxes = [(int(img.shape[0]/2), int(img.shape[1]/2), int(img.shape[0]))]
 	#
 	export_img_and_boxes(img, bboxes)
+	
+	if ( not ( index % 1000) and index != 0 ):
+		print ( "Process", str(index) + "/" + str(len(onlyfiles)) )
