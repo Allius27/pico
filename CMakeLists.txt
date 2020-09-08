@@ -28,6 +28,12 @@ INSTALL(
 	rnt/cascades/_eyesfinder  DESTINATION share/${PROJECT_NAME}
 )
 
+include_directories ( ${PROJECT_NAME} 
+		${CMAKE_PREFIX_PATH}/include/
+		${CMAKE_PREFIX_PATH}/include/opencv4 
+)
+target_link_libraries( ${PROJECT_NAME} opencv_world)
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-L${CMAKE_PREFIX_PATH}/lib")
 
 option(DEMO "Build example" OFF)
 

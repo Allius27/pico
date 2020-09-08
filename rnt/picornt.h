@@ -11,6 +11,7 @@
 
 #include <string>
 
+#include <opencv2/opencv.hpp>
 
 class picornt
 {
@@ -37,6 +38,19 @@ class picornt
 
 	int find_connected_components(int a[], float rcsq[], int n);
 
+	int MAXNDETECTIONS = 2048;
+    float angle = 0.0f;
+    float scalefactor = 1.1f;
+    float stridefactor = 0.1f;
+    int minsize = 128;
+    float qthreshold = 5.0f;
+
+    int justRect{false};
+
+    bool isIntersects(cv::Rect a, cv::Rect b) {
+    	return ((a & b).area() > 0);
+    }
+
 public:
 	picornt() {}
 
@@ -58,6 +72,16 @@ public:
 		void* pixels, int nrows, int ncols, int ldim,
 		float scalefactor, float stridefactor, float minsize, float maxsize
 	);
+
+	void setJustRect(bool value) {
+		justRect = value;
+	}
+	
+	void setMinSize(int value) {
+	    minsize = value;
+	}
+
+	std::vector<cv::Rect> processFrame(const cv::Mat &grayMat);
 
 	int cluster_detections(float rcsq[], int n);
 };

@@ -247,6 +247,81 @@ int picornt::find_objects
 	return ndetections;
 }
 
+std::vector<cv::Rect> picornt::processFrame (const cv::Mat &grayMat) {
+	float rcsq[4*MAXNDETECTIONS];
+
+    uint8_t* pixels = (uint8_t *)grayMat.data;
+    int nrows  = grayMat.rows;
+    int ncols  = grayMat.cols;
+    int ldim   = grayMat.step;
+
+    int ndetections = find_objects(rcsq, MAXNDETECTIONS, angle, pixels, nrows, ncols, ldim, scalefactor, stridefactor, minsize, MIN(nrows, ncols));
+
+    int preFilteredCount = 0;
+    std::vector<cv::Rect> tmpRects, resultRects;
+
+    for(int i=0; i<ndetections; ++i)
+        if(rcsq[4*i+3]>=qthreshold) // check the confidence threshold
+        {
+            preFilteredCount++;
+
+            cv::Rect rect;
+            int centerX = rcsq[4*i+1];
+            int centerY = rcsq[4*i+0];
+            int radius = rcsq[4*i+2]/2;
+
+            if ( !justRect ) {
+                rect.x = centerX - radius*1.2;
+                rect.y = centerY - radius;
+                rect.width = 2 * radius * 1.3;
+                rect.height = 2.5 * radius;
+            }
+            else {
+                rect.x = centerX - radius;
+                rect.y = centerY - radius;
+                rect.width = 2 * radius;
+                rect.height = 2 * radius;
+            }
+
+            if ( (rect.x + rect.width) >= grayMat.size().width)
+                rect.width = grayMat.size().width - rect.x;
+
+            if ( (rect.y + rect.height) >= grayMat.size().height)
+                rect.height = grayMat.size().height - rect.y;
+
+            tmpRects.push_back(rect);
+        }
+
+
+    // filtering
+    if ( tmpRects.size() > 1 )
+    {
+        resultRects.push_back( tmpRects.at(0) );
+
+        for (int i = 1; i < tmpRects.size(); i++)
+        {
+            if ( isIntersects(tmpRects.at(i), tmpRects.at(i-1)))
+                continue;
+
+            bool isBreak{false};
+
+            for (int j = 0; j < resultRects.size(); j++)
+            {
+                if ( isIntersects(tmpRects.at(i), resultRects.at(j)) )
+                {
+                    isBreak = true;
+                    break;
+                }
+            }
+
+            if (!isBreak)
+                resultRects.push_back( resultRects.at(i) );
+        }
+    }
+
+    return resultRects; 
+}
+
 /*
 	
 */
